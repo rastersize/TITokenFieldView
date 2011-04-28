@@ -41,7 +41,7 @@
 - (void)tokenField:(TITokenField *)tokenField didChangeToFrame:(CGRect)frame;
 - (void)tokenFieldTextDidChange:(TITokenField *)tokenField;
 - (void)tokenField:(TITokenField *)tokenField didFinishSearch:(NSArray *)matches;
-
+- (void)tokenField:(TITokenField *)tokenField didSelectObject:(id)object;
 - (UITableViewCell *)tokenField:(TITokenField *)tokenField resultsTableView:(UITableView *)tableView cellForObject:(id)object;
 - (CGFloat)tokenField:(TITokenField *)tokenField resultsTableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath;
 @end
