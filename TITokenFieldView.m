@@ -71,8 +71,17 @@
 #define tokenFieldHeight 42
 #define separatorHeight 1
 
-#pragma mark Main Shit
+#pragma mark Main Stuff
+
 - (id)initWithFrame:(CGRect)frame {
+	if((self = [self initWithFrame:frame preloadFieldWithString:nil])) {
+		
+	}
+
+	return self;
+}
+
+- (id)initWithFrame:(CGRect)frame preloadFieldWithString:(NSString *)preloadContent {
 	
     if ((self = [super initWithFrame:frame])){
 		
@@ -90,14 +99,16 @@
 		[self addSubview:contentView];
 		[self setContentSize:CGSizeMake(self.frame.size.width, self.contentView.frame.origin.y + self.contentView.frame.size.height + 2)];
 		[contentView release];
-		
+
 		tokenField = [[TITokenField alloc] initWithFrame:CGRectMake(0, 0, frame.size.width, tokenFieldHeight)];
+		if(preloadContent) tokenField.text = preloadContent;
 		[tokenField addTarget:self action:@selector(textFieldDidChange:) forControlEvents:UIControlEventEditingChanged];
 		[tokenField setBackgroundColor:[UIColor whiteColor]];
 		[tokenField setDelegate:self];
 		[self addSubview:tokenField];
 		[tokenField release];
-		
+		[self textFieldDidBeginEditing:tokenField];
+
 		separator = [[UIView alloc] initWithFrame:CGRectMake(0, tokenFieldHeight, self.frame.size.width, separatorHeight)];
 		[separator setBackgroundColor:[UIColor colorWithWhite:0.7 alpha:1]];
 		[self addSubview:separator];
@@ -261,7 +272,9 @@
 		
 	}
 	
-	[tokenField setText:textEmpty];
+	if(tokenField.text.length <= 0) [tokenField setText:textEmpty];
+	else [self performSelector:@selector(textFieldDidChange:) withObject:tokenField];
+
     [resultsTable reloadData];
 	
 	[tokenField updateHeight:NO];
@@ -302,7 +315,6 @@
 //}
 
 - (void)textFieldDidChange:(UITextField *)textField {
-	
 	if ([textField.text isEqualToString:@""] || textField.text.length == 0){
 		[textField setText:textEmpty];
 	}

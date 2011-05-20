@@ -87,6 +87,8 @@
 @property (nonatomic, readonly) TITokenField * tokenField;
 
 - (void)updateContentSize;
+- (id)initWithFrame:(CGRect)frame preloadFieldWithString:(NSString *)preloadContent;
+
 @end
 
 //==========================================================
