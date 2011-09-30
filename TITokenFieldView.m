@@ -71,16 +71,24 @@ CGFloat const kShadowHeight = 10;
 CGFloat const kTokenFieldHeight = 42;
 CGFloat const kSeparatorHeight = 1;
 
-#pragma mark Main Shit
+#pragma mark Main Stuff
+
 - (id)initWithFrame:(CGRect)frame {
+	if((self = [self initWithFrame:frame preloadFieldWithString:nil])) {
+		
+	}
+
+	return self;
+}
+
+- (id)initWithFrame:(CGRect)frame preloadFieldWithString:(NSString *)preloadContent {
 	
     if ((self = [super initWithFrame:frame])){
 		
 		[self setBackgroundColor:[UIColor clearColor]];
 		[self setDelaysContentTouches:NO];
 		[self setMultipleTouchEnabled:NO];
-		[self setScrollEnabled:YES];
-		
+		[self setScrollEnabled:NO];
 		showAlreadyTokenized = NO;
 		
 		resultsArray = [[NSMutableArray alloc] init];
@@ -93,11 +101,14 @@ CGFloat const kSeparatorHeight = 1;
 		[contentView release];
 		
 		tokenField = [[TITokenField alloc] initWithFrame:CGRectMake(0, 0, frame.size.width, kTokenFieldHeight)];
+		if(preloadContent) tokenField.text = preloadContent;
 		[tokenField addTarget:self action:@selector(textFieldDidChange:) forControlEvents:UIControlEventEditingChanged];
 		[tokenField setBackgroundColor:[UIColor whiteColor]];
 		[tokenField setDelegate:self];
 		[self addSubview:tokenField];
 		[tokenField release];
+		
+		[self textFieldDidBeginEditing:tokenField];
 		
 		separator = [[UIView alloc] initWithFrame:CGRectMake(0, kTokenFieldHeight, self.frame.size.width, kSeparatorHeight)];
 		[separator setBackgroundColor:[UIColor colorWithWhite:0.7 alpha:1]];
@@ -226,9 +237,13 @@ CGFloat const kSeparatorHeight = 1;
 }
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
-	
-	[tokenField addToken:[resultsArray objectAtIndex:indexPath.row]];
 	[tableView deselectRowAtIndexPath:indexPath animated:YES];
+	
+	if ([delegate respondsToSelector:@selector(tokenField:didSelectObject:)]){
+		[delegate tokenField:tokenField didSelectObject:[resultsArray objectAtIndex:indexPath.row]];
+	} else {
+		[tokenField addToken:[resultsArray objectAtIndex:indexPath.row]];
+	}
 }
 
 #pragma mark TextField Methods
@@ -251,44 +266,49 @@ CGFloat const kSeparatorHeight = 1;
 		
 	}
 	
-	[tokenField setText:kTextEmpty];
+	if(tokenField.text.length <= 0) [tokenField setText:kTextEmpty];
+	else [self performSelector:@selector(textFieldDidChange:) withObject:tokenField];
+
     [resultsTable reloadData];
 	
 	[tokenField updateHeight:NO];
 }
 
-- (BOOL)textFieldShouldEndEditing:(UITextField *)textField {
-	[self processLeftoverText:textField.text];
-	return YES;
-}
-
-- (void)textFieldDidEndEditing:(UITextField *)textField {
-	
-	NSArray * tokens = [[NSArray alloc] initWithArray:tokenField.tokensArray];
-	for (TIToken * token in tokens) [token removeFromSuperview];
-	[tokens release];
-	
-	[self setTokenTitles:[tokenField getTokenTitles]];
-	
-	NSString * untokenized = [tokenTitles componentsJoinedByString:@", "];
-	CGSize untokSize = [untokenized sizeWithFont:[UIFont systemFontOfSize:14]];
-	
-	[tokenField.tokensArray removeAllObjects];
-	[tokenField updateHeight:YES];
-	
-	if (untokSize.width > self.frame.size.width - 120){
-		untokenized = [NSString stringWithFormat:@"%i recipients", tokenTitles.count];
-	}
-	
-	[textField setText:untokenized];
-	
-	[textFieldShadow setHidden:YES];
-	[resultsTable setHidden:YES];
-	
-}
+//- (BOOL)textFieldShouldEndEditing:(UITextField *)textField {
+//	[self processLeftoverText:textField.text];
+//	return YES;
+//}
+//
+//- (void)textFieldDidEndEditing:(UITextField *)textField {
+//	
+//	NSArray * tokens = [[NSArray alloc] initWithArray:tokenField.tokensArray];
+//	
+//	for (TIToken * token in tokens){
+//		[token removeFromSuperview];
+//	}
+//	
+//	[tokens release];
+//	
+//	[self setTokenTitles:[tokenField getTokenTitles]];
+//	
+//	NSString * untokenized = [tokenTitles componentsJoinedByString:@", "];
+//	CGSize untokSize = [untokenized sizeWithFont:[UIFont systemFontOfSize:14]];
+//	
+//	[tokenField.tokensArray removeAllObjects];
+//	[tokenField updateHeight:YES];
+//	
+//	if (untokSize.width > self.frame.size.width - 120){
+//		untokenized = [NSString stringWithFormat:@"%i recipients", tokenTitles.count];
+//	}
+//	
+//	[textField setText:untokenized];
+//	
+//	[textFieldShadow setHidden:YES];
+//	[resultsTable setHidden:YES];
+//	
+//}
 
 - (void)textFieldDidChange:(UITextField *)textField {
-	
 	if ([textField.text isEqualToString:@""] || textField.text.length == 0){
 		[textField setText:kTextEmpty];
 	}
@@ -344,12 +364,11 @@ CGFloat const kSeparatorHeight = 1;
 }
 
 - (BOOL)textFieldShouldReturn:(UITextField *)textField {
-	
-	[self processLeftoverText:textField.text];
-	
 	if ([delegate respondsToSelector:@selector(tokenFieldShouldReturn:)]){
 		return [delegate tokenFieldShouldReturn:tokenField];
 	}
+
+//	[self processLeftoverText:textField.text];
 	
 	return YES;
 }
@@ -672,7 +691,7 @@ typedef void (^AnimationBlock)();
 	TITokenFieldView * parentView = (TITokenFieldView *)self.superview;
 	
 	[parentView setScrollsToTop:!shouldMove];
-	[parentView setScrollEnabled:!shouldMove];
+	[parentView setScrollEnabled:NO];
 	
 	CGFloat offset = numberOfLines == 1 || !shouldMove ? 0 : (self.frame.size.height - kTokenFieldHeight) + 1;
 	[parentView setContentOffset:CGPointMake(0, self.frame.origin.y + offset) animated:YES];
